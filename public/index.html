@@ -115,7 +115,7 @@
                 const data = await response.json();
                 
                 if (data.error) {
-                    alert(data.error);
+                    alert("Error: " + data.error);
                     return;
                 }
 
