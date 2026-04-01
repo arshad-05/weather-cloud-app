@@ -17,30 +17,31 @@ def get_weather():
         loc = geo_res['results'][0]
         lat, lon = loc['latitude'], loc['longitude']
 
-        # 2. Advanced Weather Fetch (Current + Hourly + Daily)
+        # 2. Comprehensive Fetch (Current + Daily + Hourly + Air Quality)
         weather_url = (
             f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}"
-            f"&current_weather=true&hourly=temperature_2m,weathercode&daily=temperature_2m_max,temperature_2m_min,weathercode"
-            f"&timezone=auto"
+            f"&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,surface_pressure,wind_speed_10m"
+            f"&daily=weather_code,temperature_2m_max,temperature_2m_min,uv_index_max"
+            f"&hourly=temperature_2m&timezone=auto&forecast_days=7"
         )
         data = requests.get(weather_url).json()
 
-        # Format Hourly (next 24 hours)
-        hourly_list = []
-        for i in range(24):
-            hourly_list.append({
-                "time": data['hourly']['time'][i].split("T")[1],
-                "temp": data['hourly']['temperature_2m'][i],
-                "code": data['hourly']['weathercode'][i]
+        # Format 7-Day Forecast
+        daily_list = []
+        for i in range(7):
+            daily_list.append({
+                "date": data['daily']['time'][i],
+                "max": data['daily']['temperature_2m_max'][i],
+                "min": data['daily']['temperature_2m_min'][i],
+                "code": data['daily']['weather_code'][i]
             })
 
         return jsonify({
             "city": loc['name'],
-            "temp": data['current_weather']['temperature'],
-            "wind": data['current_weather']['windspeed'],
-            "hourly": hourly_list,
-            "daily_max": data['daily']['temperature_2m_max'],
-            "daily_min": data['daily']['temperature_2m_min']
+            "country": loc.get('country', ''),
+            "current": data['current'],
+            "daily": daily_list,
+            "hourly_temp": data['hourly']['temperature_2m'][:24] # Next 24 hours
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500

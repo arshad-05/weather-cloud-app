@@ -3,39 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud Weather Pro</title>
+    <title>Lively Cloud Weather</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .glass { background: rgba(255,255,255,0.1); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); }
+        body {
+            background: url('https://images.unsplash.com/photo-1534088568595-a066f410bcda?auto=format&fit=crop&w=2000&q=80');
+            background-size: cover;
+            background-position: center;
+            backdrop-filter: brightness(0.6);
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px) saturate(150%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+        }
         .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<body class="bg-slate-900 text-white min-h-screen p-6 font-sans">
-    <div class="max-w-4xl mx-auto">
-        <div class="flex gap-2 mb-8">
-            <input id="cityInput" type="text" placeholder="Search city..." class="w-full p-4 rounded-2xl bg-white/10 outline-none border border-white/10 focus:border-white/30">
-            <button onclick="getWeather()" class="bg-white text-black px-6 rounded-2xl font-bold">Search</button>
+<body class="text-white min-h-screen p-4 md:p-10 font-sans">
+
+    <div class="max-w-6xl mx-auto">
+        <div class="flex justify-center mb-10">
+            <div class="glass flex w-full max-w-md overflow-hidden p-1">
+                <input id="cityInput" type="text" placeholder="Search city..." class="bg-transparent w-full px-5 py-2 outline-none">
+                <button onclick="getWeather()" class="bg-white/20 hover:bg-white/30 px-6 py-2 rounded-xl transition-all">Search</button>
+            </div>
         </div>
 
-        <div id="mainContent" class="hidden">
+        <div id="dashboard" class="hidden animate-in fade-in duration-700">
             <div class="text-center mb-10">
                 <h1 id="cityName" class="text-4xl font-light">--</h1>
-                <div id="temp" class="text-8xl font-thin my-4">0°</div>
-                <p id="condition" class="opacity-60 uppercase tracking-widest text-sm">Loading Cloud Data...</p>
+                <p id="weatherDesc" class="opacity-70 mt-2 text-lg">Clear Sky</p>
+                <div id="mainTemp" class="text-8xl font-thin mt-4">--°</div>
             </div>
 
-            <h3 class="text-sm font-bold opacity-50 mb-4 uppercase tracking-wider">Hourly Forecast</h3>
-            <div id="hourlyContainer" class="flex gap-4 overflow-x-auto no-scrollbar pb-6 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                
+                <div class="glass p-6 md:col-span-1 flex flex-col gap-5">
+                    <h3 class="text-xs font-bold opacity-50 uppercase tracking-widest">7-Day Forecast</h3>
+                    <div id="dailyList" class="flex flex-col gap-4">
+                        </div>
                 </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="glass p-6 rounded-3xl">
-                    <h3 class="opacity-50 text-xs mb-4 uppercase">Current Wind</h3>
-                    <div id="wind" class="text-3xl font-light">-- km/h</div>
-                </div>
-                <div class="glass p-6 rounded-3xl">
-                    <h3 class="opacity-50 text-xs mb-4 uppercase">Cloud Status</h3>
-                    <div class="text-3xl font-light">Verified</div>
+                <div class="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    
+                    <div class="glass p-6 md:col-span-3">
+                        <h3 class="text-xs font-bold opacity-50 uppercase mb-4">Hourly Temperature</h3>
+                        <div id="hourlyList" class="flex gap-6 overflow-x-auto no-scrollbar pb-2">
+                            </div>
+                    </div>
+
+                    <div class="glass p-6 flex flex-col justify-between">
+                        <p class="text-xs opacity-50 uppercase">UV Index</p>
+                        <p id="uv" class="text-3xl font-light mt-4">Low</p>
+                    </div>
+                    <div class="glass p-6 flex flex-col justify-between">
+                        <p class="text-xs opacity-50 uppercase">Humidity</p>
+                        <p id="humidity" class="text-3xl font-light mt-4">--%</p>
+                    </div>
+                    <div class="glass p-6 flex flex-col justify-between">
+                        <p class="text-xs opacity-50 uppercase">Pressure</p>
+                        <p id="pressure" class="text-3xl font-light mt-4">-- hPa</p>
+                    </div>
+                    <div class="glass p-6 md:col-span-2 flex flex-col justify-between">
+                        <p class="text-xs opacity-50 uppercase">Wind Speed</p>
+                        <p id="wind" class="text-3xl font-light mt-4">-- km/h</p>
+                    </div>
+                    <div class="glass p-6 flex flex-col justify-between">
+                        <p class="text-xs opacity-50 uppercase">Feels Like</p>
+                        <p id="feelsLike" class="text-3xl font-light mt-4">--°</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -47,22 +85,38 @@
             const res = await fetch(`/api/weather?city=${city}`);
             const data = await res.json();
             
-            document.getElementById('mainContent').classList.remove('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
             document.getElementById('cityName').innerText = data.city;
-            document.getElementById('temp').innerText = Math.round(data.temp) + "°";
-            document.getElementById('wind').innerText = data.wind + " km/h";
+            document.getElementById('mainTemp').innerText = Math.round(data.current.temperature_2m) + "°";
+            document.getElementById('humidity').innerText = data.current.relative_humidity_2m + "%";
+            document.getElementById('pressure').innerText = data.current.surface_pressure;
+            document.getElementById('wind').innerText = data.current.wind_speed_10m + " km/h";
+            document.getElementById('feelsLike').innerText = Math.round(data.current.apparent_temperature) + "°";
 
-            // Inject Hourly Items
-            const hourlyContainer = document.getElementById('hourlyContainer');
-            hourlyContainer.innerHTML = '';
-            data.hourly.forEach(hour => {
-                const item = `
-                    <div class="glass min-w-[90px] p-4 rounded-3xl text-center">
-                        <p class="text-[10px] opacity-50 mb-2">${hour.time}</p>
-                        <p class="text-xl font-semibold">${Math.round(hour.temp)}°</p>
+            // Inject 7-Day Forecast
+            const dailyList = document.getElementById('dailyList');
+            dailyList.innerHTML = '';
+            data.daily.forEach(day => {
+                const dateLabel = new Date(day.date).toLocaleDateString('en-US', {weekday: 'short'});
+                dailyList.innerHTML += `
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="w-10 opacity-70">${dateLabel}</span>
+                        <span class="font-bold">${Math.round(day.max)}°</span>
+                        <span class="opacity-50 text-xs">${Math.round(day.min)}°</span>
                     </div>
                 `;
-                hourlyContainer.innerHTML += item;
+            });
+
+            // Inject Hourly
+            const hourlyList = document.getElementById('hourlyList');
+            hourlyList.innerHTML = '';
+            data.hourly_temp.forEach((temp, i) => {
+                hourlyList.innerHTML += `
+                    <div class="text-center min-w-[50px]">
+                        <p class="text-[10px] opacity-40 mb-2">${i}:00</p>
+                        <p class="font-semibold">${Math.round(temp)}°</p>
+                    </div>
+                `;
             });
         }
     </script>
