@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Weather</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: linear-gradient(to bottom right, #4facfe, #00f2fe); min-height: 100vh; }
+        .glass { background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px); border-radius: 20px; border: 1px solid rgba(255,255,255,0.3); }
+    </style>
+</head>
+<body class="flex items-center justify-center p-5">
+    <div class="glass p-8 w-full max-w-md text-white text-center shadow-2xl">
+        <h1 class="text-3xl font-bold mb-6">Cloud Weather</h1>
+        <div class="flex gap-2 mb-6">
+            <input id="cityInput" type="text" placeholder="Enter city..." class="w-full p-3 rounded-lg text-black outline-none">
+            <button onclick="getWeather()" class="bg-white text-blue-500 px-4 py-2 rounded-lg font-bold hover:bg-blue-50">Search</button>
+        </div>
+        <div id="result" class="hidden">
+            <h2 id="cityName" class="text-4xl font-light">--</h2>
+            <p id="temp" class="text-7xl font-bold my-4">0°C</p>
+            <p id="wind" class="text-lg opacity-80">Wind: -- km/h</p>
+        </div>
+        <p id="loader" class="hidden mt-4">Fetching from Cloud...</p>
+    </div>
+
+    <script>
+        async function getWeather() {
+            const city = document.getElementById('cityInput').value;
+            const loader = document.getElementById('loader');
+            const result = document.getElementById('result');
+            
+            loader.classList.remove('hidden');
+            result.classList.add('hidden');
+
+            try {
+                const response = await fetch(`/api/weather?city=${city}`);
+                const data = await response.json();
+                
+                if (data.error) alert(data.error);
+                else {
+                    document.getElementById('cityName').innerText = data.city;
+                    document.getElementById('temp').innerText = Math.round(data.temp) + "°C";
+                    document.getElementById('wind').innerText = "Wind Speed: " + data.wind + " km/h";
+                    result.classList.remove('hidden');
+                }
+            } catch (err) {
+                console.error("Error connecting to cloud function");
+            } finally {
+                loader.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
