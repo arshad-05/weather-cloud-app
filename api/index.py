@@ -3,39 +3,44 @@ from flask_cors import CORS
 import requests
 
 app = Flask(__name__)
-CORS(app) # Allows your HTML file to talk to this Python API
+CORS(app)
 
-@app.route('/api/weather', methods=['GET'])
+@app.route('/api/weather')
 def get_weather():
     city = request.args.get('city')
-    if not city:
-        return jsonify({"error": "No city provided"}), 400
-
     try:
-        # 1. Geocoding API: Get Lat/Lon from City Name
+        # 1. Geocoding
         geo_url = f"https://geocoding-api.open-meteo.com/v1/search?name={city}&count=1"
-        geo_data = requests.get(geo_url).json()
+        geo_res = requests.get(geo_url).json()
+        if not geo_res.get('results'): return jsonify({"error": "City not found"}), 404
         
-        if 'results' not in geo_data:
-            return jsonify({"error": "City not found"}), 404
-        
-        location = geo_data['results'][0]
-        lat, lon = location['latitude'], location['longitude']
+        loc = geo_res['results'][0]
+        lat, lon = loc['latitude'], loc['longitude']
 
-        # 2. Weather API: Get Current Weather + Air Quality (AQI)
-        weather_url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current_weather=true&hourly=pm2_5,uv_index"
-        weather_res = requests.get(weather_url).json()
+        # 2. Advanced Weather Fetch (Current + Hourly + Daily)
+        weather_url = (
+            f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}"
+            f"&current_weather=true&hourly=temperature_2m,weathercode&daily=temperature_2m_max,temperature_2m_min,weathercode"
+            f"&timezone=auto"
+        )
+        data = requests.get(weather_url).json()
+
+        # Format Hourly (next 24 hours)
+        hourly_list = []
+        for i in range(24):
+            hourly_list.append({
+                "time": data['hourly']['time'][i].split("T")[1],
+                "temp": data['hourly']['temperature_2m'][i],
+                "code": data['hourly']['weathercode'][i]
+            })
 
         return jsonify({
-            "city": location['name'],
-            "country": location.get('country', ''),
-            "temp": weather_res['current_weather']['temperature'],
-            "condition_code": weather_res['current_weather']['weathercode'],
-            "wind": weather_res['current_weather']['windspeed']
+            "city": loc['name'],
+            "temp": data['current_weather']['temperature'],
+            "wind": data['current_weather']['windspeed'],
+            "hourly": hourly_list,
+            "daily_max": data['daily']['temperature_2m_max'],
+            "daily_min": data['daily']['temperature_2m_min']
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-# Required for Vercel
-def handler(event, context):
-    return app(event, context)

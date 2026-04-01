@@ -5,104 +5,65 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cloud Weather Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; transition: background 1s ease; }
-        .glass-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(16px) saturate(180%);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 2rem;
-        }
-        .weather-gradient-default { background: linear-gradient(135deg, #1e3a8a, #3b82f6); }
-        .weather-gradient-warm { background: linear-gradient(135deg, #f59e0b, #ef4444); }
-        .weather-gradient-cold { background: linear-gradient(135deg, #0ea5e9, #94a3b8); }
+        .glass { background: rgba(255,255,255,0.1); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
-<body class="weather-gradient-default min-h-screen flex items-center justify-center p-6">
+<body class="bg-slate-900 text-white min-h-screen p-6 font-sans">
+    <div class="max-w-4xl mx-auto">
+        <div class="flex gap-2 mb-8">
+            <input id="cityInput" type="text" placeholder="Search city..." class="w-full p-4 rounded-2xl bg-white/10 outline-none border border-white/10 focus:border-white/30">
+            <button onclick="getWeather()" class="bg-white text-black px-6 rounded-2xl font-bold">Search</button>
+        </div>
 
-    <div class="glass-card p-10 w-full max-w-lg shadow-2xl text-white">
-        <div class="flex justify-between items-center mb-10">
-            <h1 class="text-2xl font-light tracking-widest uppercase">Cloud Weather</h1>
-            <div class="text-right">
-                <p id="date" class="text-xs opacity-60"></p>
+        <div id="mainContent" class="hidden">
+            <div class="text-center mb-10">
+                <h1 id="cityName" class="text-4xl font-light">--</h1>
+                <div id="temp" class="text-8xl font-thin my-4">0°</div>
+                <p id="condition" class="opacity-60 uppercase tracking-widest text-sm">Loading Cloud Data...</p>
             </div>
-        </div>
 
-        <div class="relative mb-8">
-            <input id="cityInput" type="text" placeholder="Search City..." 
-                   class="w-full bg-white/10 border border-white/20 rounded-xl py-4 px-6 text-white placeholder-white/50 outline-none focus:ring-2 focus:ring-white/30 transition-all">
-            <button onclick="getWeather()" class="absolute right-3 top-3 bg-white text-blue-600 font-bold py-1 px-4 rounded-lg hover:scale-105 transition-transform">
-                GO
-            </button>
-        </div>
-
-        <div id="result" class="hidden animate-in fade-in zoom-in duration-500">
-            <div class="text-center">
-                <h2 id="cityName" class="text-4xl font-semibold mb-2">--</h2>
-                <p id="countryName" class="text-sm opacity-70 mb-6 tracking-widest uppercase font-bold">--</p>
-                
-                <div class="flex items-center justify-center mb-4">
-                    <span id="temp" class="text-9xl font-thin tracking-tighter">0°</span>
+            <h3 class="text-sm font-bold opacity-50 mb-4 uppercase tracking-wider">Hourly Forecast</h3>
+            <div id="hourlyContainer" class="flex gap-4 overflow-x-auto no-scrollbar pb-6 mb-8">
                 </div>
-                
-                <div class="grid grid-cols-2 gap-4 mt-10">
-                    <div class="bg-white/5 p-4 rounded-2xl border border-white/10">
-                        <p class="text-[10px] uppercase opacity-50 mb-1">Wind Speed</p>
-                        <p id="wind" class="text-xl font-semibold">-- km/h</p>
-                    </div>
-                    <div class="bg-white/5 p-4 rounded-2xl border border-white/10">
-                        <p class="text-[10px] uppercase opacity-50 mb-1">Status</p>
-                        <p id="condition" class="text-xl font-semibold">Clear</p>
-                    </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="glass p-6 rounded-3xl">
+                    <h3 class="opacity-50 text-xs mb-4 uppercase">Current Wind</h3>
+                    <div id="wind" class="text-3xl font-light">-- km/h</div>
+                </div>
+                <div class="glass p-6 rounded-3xl">
+                    <h3 class="opacity-50 text-xs mb-4 uppercase">Cloud Status</h3>
+                    <div class="text-3xl font-light">Verified</div>
                 </div>
             </div>
-        </div>
-
-        <div id="loader" class="hidden text-center py-10">
-            <div class="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-white"></div>
         </div>
     </div>
 
     <script>
-        document.getElementById('date').innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-
         async function getWeather() {
             const city = document.getElementById('cityInput').value;
-            const loader = document.getElementById('loader');
-            const result = document.getElementById('result');
+            const res = await fetch(`/api/weather?city=${city}`);
+            const data = await res.json();
             
-            loader.classList.remove('hidden');
-            result.classList.add('hidden');
+            document.getElementById('mainContent').classList.remove('hidden');
+            document.getElementById('cityName').innerText = data.city;
+            document.getElementById('temp').innerText = Math.round(data.temp) + "°";
+            document.getElementById('wind').innerText = data.wind + " km/h";
 
-            try {
-                const response = await fetch(`/api/weather?city=${city}`);
-                const data = await response.json();
-                
-                if (data.error) {
-                    alert("City not found in the cloud database.");
-                } else {
-                    document.getElementById('cityName').innerText = data.city;
-                    document.getElementById('countryName').innerText = data.country;
-                    document.getElementById('temp').innerText = Math.round(data.temp) + "°";
-                    document.getElementById('wind').innerText = data.wind + " km/h";
-                    
-                    // Update Background based on Temp
-                    if (data.temp > 25) {
-                        document.body.className = "weather-gradient-warm min-h-screen flex items-center justify-center p-6";
-                    } else if (data.temp < 15) {
-                        document.body.className = "weather-gradient-cold min-h-screen flex items-center justify-center p-6";
-                    } else {
-                        document.body.className = "weather-gradient-default min-h-screen flex items-center justify-center p-6";
-                    }
-
-                    result.classList.remove('hidden');
-                }
-            } catch (err) {
-                alert("Cloud connection error.");
-            } finally {
-                loader.classList.add('hidden');
-            }
+            // Inject Hourly Items
+            const hourlyContainer = document.getElementById('hourlyContainer');
+            hourlyContainer.innerHTML = '';
+            data.hourly.forEach(hour => {
+                const item = `
+                    <div class="glass min-w-[90px] p-4 rounded-3xl text-center">
+                        <p class="text-[10px] opacity-50 mb-2">${hour.time}</p>
+                        <p class="text-xl font-semibold">${Math.round(hour.temp)}°</p>
+                    </div>
+                `;
+                hourlyContainer.innerHTML += item;
+            });
         }
     </script>
 </body>
