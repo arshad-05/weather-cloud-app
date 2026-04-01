@@ -110,11 +110,11 @@
             // Inject Hourly
             const hourlyList = document.getElementById('hourlyList');
             hourlyList.innerHTML = '';
-            data.hourly_temp.forEach((temp, i) => {
+            data.hourly_data.forEach((item) => {
                 hourlyList.innerHTML += `
-                    <div class="text-center min-w-[50px]">
-                        <p class="text-[10px] opacity-40 mb-2">${i}:00</p>
-                        <p class="font-semibold">${Math.round(temp)}°</p>
+                    <div class="text-center min-w-[60px] p-2">
+                        <p class="text-[10px] opacity-40 mb-2">${item.time}</p>
+                        <p class="font-semibold text-sm">${Math.round(item.temp)}°</p>
                     </div>
                 `;
             });
