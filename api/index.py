@@ -18,46 +18,41 @@ def get_weather():
         loc = geo_res['results'][0]
         lat, lon = loc['latitude'], loc['longitude']
 
-        # 2. Fetch data (Current + Hourly + Daily)
+        # 2. Fetch data with timezone auto-detection
         weather_url = (
             f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}"
-            f"&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,surface_pressure,wind_speed_10m"
-            f"&daily=weather_code,temperature_2m_max,temperature_2m_min,uv_index_max"
-            f"&hourly=temperature_2m&timezone=auto"
+            f"&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,surface_pressure,wind_speed_10m,time"
+            f"&daily=weather_code,temperature_2m_max,temperature_2m_min"
+            f"&hourly=temperature_2m,weather_code&timezone=auto"
         )
         data = requests.get(weather_url).json()
 
-        # 3. GET CURRENT HOUR TO SLICE DATA
-        current_hour = datetime.now().hour
+        # 3. Find "Now" in the Hourly Array
+        current_time_str = data['current']['time'] # Format: "2026-04-01T12:00"
+        hourly_times = data['hourly']['time']
         
-        # Get temperatures starting from the current hour for the next 24 hours
-        all_hourly_temps = data['hourly']['temperature_2m']
-        # Slice from current hour to current hour + 24
-        sliced_temps = all_hourly_temps[current_hour : current_hour + 24]
+        # Find the index where hourly time matches current time
+        start_index = hourly_times.index(current_time_str) if current_time_str in hourly_times else 0
         
-        # Create a labeled list for the frontend
-        hourly_forecast = []
-        for i, temp in enumerate(sliced_temps):
-            hour_label = (current_hour + i) % 24
-            hourly_forecast.append({
-                "time": f"{hour_label}:00",
-                "temp": temp
-            })
+        # Slice next 24 hours starting from "Now"
+        next_24_temps = data['hourly']['temperature_2m'][start_index : start_index + 24]
+        next_24_times = data['hourly']['time'][start_index : start_index + 24]
 
-        # Format Daily
-        daily_list = []
-        for i in range(7):
-            daily_list.append({
-                "date": data['daily']['time'][i],
-                "max": data['daily']['temperature_2m_max'][i],
-                "min": data['daily']['temperature_2m_min'][i]
+        hourly_forecast = []
+        for i in range(len(next_24_temps)):
+            # Format time to show "12:00" or "Now"
+            time_label = "Now" if i == 0 else next_24_times[i].split("T")[1]
+            hourly_forecast.append({
+                "time": time_label,
+                "temp": next_24_temps[i]
             })
 
         return jsonify({
             "city": loc['name'],
+            "local_time": current_time_str.replace("T", " "),
             "current": data['current'],
-            "daily": daily_list,
-            "hourly_data": hourly_forecast  # Send the sliced data
+            "daily": data['daily'],
+            "hourly_data": hourly_forecast
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500

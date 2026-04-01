@@ -5,120 +5,172 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lively Cloud Weather</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;600;700&display=swap" rel="stylesheet">
     <style>
         body {
-            background: url('https://images.unsplash.com/photo-1534088568595-a066f410bcda?auto=format&fit=crop&w=2000&q=80');
+            font-family: 'Inter', sans-serif;
+            background: url('https://images.unsplash.com/photo-1504608524841-42fe6f032b4b?auto=format&fit=crop&w=2000&q=80');
             background-size: cover;
             background-position: center;
-            backdrop-filter: brightness(0.6);
+            background-attachment: fixed;
+            transition: all 0.5s ease;
         }
         .glass {
             background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(20px) saturate(150%);
+            backdrop-filter: blur(25px) saturate(160%);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 1.5rem;
         }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        .active-now {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
     </style>
 </head>
-<body class="text-white min-h-screen p-4 md:p-10 font-sans">
+<body class="text-white min-h-screen p-4 md:p-8">
 
     <div class="max-w-6xl mx-auto">
-        <div class="flex justify-center mb-10">
-            <div class="glass flex w-full max-w-md overflow-hidden p-1">
-                <input id="cityInput" type="text" placeholder="Search city..." class="bg-transparent w-full px-5 py-2 outline-none">
-                <button onclick="getWeather()" class="bg-white/20 hover:bg-white/30 px-6 py-2 rounded-xl transition-all">Search</button>
+        <div class="flex justify-center mb-8">
+            <div class="glass flex w-full max-w-md overflow-hidden p-1 shadow-2xl">
+                <input id="cityInput" type="text" placeholder="Search for a city..." class="bg-transparent w-full px-5 py-3 outline-none text-white placeholder-white/50">
+                <button onclick="getWeather()" class="bg-white/20 hover:bg-white/40 px-8 py-2 rounded-xl transition-all font-semibold uppercase text-xs tracking-widest">Search</button>
             </div>
         </div>
 
-        <div id="dashboard" class="hidden animate-in fade-in duration-700">
-            <div class="text-center mb-10">
-                <h1 id="cityName" class="text-4xl font-light">--</h1>
-                <p id="weatherDesc" class="opacity-70 mt-2 text-lg">Clear Sky</p>
-                <div id="mainTemp" class="text-8xl font-thin mt-4">--°</div>
+        <div id="dashboard" class="hidden animate-in fade-in slide-in-from-bottom-4 duration-1000">
+            <div class="text-center mb-12">
+                <h1 id="cityName" class="text-5xl font-light tracking-tight">--</h1>
+                <p id="localTime" class="opacity-50 mt-2 text-sm uppercase tracking-widest font-bold">--</p>
+                <div id="mainTemp" class="text-[10rem] font-thin leading-none my-6 select-none">--°</div>
+                <p id="weatherDesc" class="text-xl opacity-80 font-light">Cloud Syncing...</p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 
-                <div class="glass p-6 md:col-span-1 flex flex-col gap-5">
-                    <h3 class="text-xs font-bold opacity-50 uppercase tracking-widest">7-Day Forecast</h3>
-                    <div id="dailyList" class="flex flex-col gap-4">
+                <div class="glass p-8 lg:col-span-1">
+                    <h3 class="text-[10px] font-bold opacity-40 uppercase tracking-[0.2em] mb-8">7-Day Forecast</h3>
+                    <div id="dailyList" class="flex flex-col gap-6">
                         </div>
                 </div>
 
-                <div class="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6">
                     
-                    <div class="glass p-6 md:col-span-3">
-                        <h3 class="text-xs font-bold opacity-50 uppercase mb-4">Hourly Temperature</h3>
-                        <div id="hourlyList" class="flex gap-6 overflow-x-auto no-scrollbar pb-2">
+                    <div class="glass p-8 md:col-span-3">
+                        <h3 class="text-[10px] font-bold opacity-40 uppercase tracking-[0.2em] mb-6">Hourly Forecast</h3>
+                        <div id="hourlyList" class="flex gap-4 overflow-x-auto no-scrollbar pb-2">
                             </div>
                     </div>
 
-                    <div class="glass p-6 flex flex-col justify-between">
-                        <p class="text-xs opacity-50 uppercase">UV Index</p>
-                        <p id="uv" class="text-3xl font-light mt-4">Low</p>
+                    <div class="glass p-8 flex flex-col justify-between min-h-[160px]">
+                        <p class="text-[10px] opacity-40 uppercase tracking-widest font-bold">Humidity</p>
+                        <p id="humidity" class="text-4xl font-light">--%</p>
                     </div>
-                    <div class="glass p-6 flex flex-col justify-between">
-                        <p class="text-xs opacity-50 uppercase">Humidity</p>
-                        <p id="humidity" class="text-3xl font-light mt-4">--%</p>
+
+                    <div class="glass p-8 flex flex-col justify-between">
+                        <p class="text-[10px] opacity-40 uppercase tracking-widest font-bold">Pressure</p>
+                        <p id="pressure" class="text-4xl font-light">-- <span class="text-sm opacity-50">hPa</span></p>
                     </div>
-                    <div class="glass p-6 flex flex-col justify-between">
-                        <p class="text-xs opacity-50 uppercase">Pressure</p>
-                        <p id="pressure" class="text-3xl font-light mt-4">-- hPa</p>
+
+                    <div class="glass p-8 flex flex-col justify-between">
+                        <p class="text-[10px] opacity-40 uppercase tracking-widest font-bold">Feels Like</p>
+                        <p id="feelsLike" class="text-4xl font-light">--°</p>
                     </div>
-                    <div class="glass p-6 md:col-span-2 flex flex-col justify-between">
-                        <p class="text-xs opacity-50 uppercase">Wind Speed</p>
-                        <p id="wind" class="text-3xl font-light mt-4">-- km/h</p>
+
+                    <div class="glass p-8 md:col-span-2 flex flex-col justify-between">
+                        <p class="text-[10px] opacity-40 uppercase tracking-widest font-bold">Wind Speed</p>
+                        <div class="flex items-baseline gap-2">
+                            <p id="wind" class="text-5xl font-light">--</p>
+                            <span class="opacity-50">km/h</span>
+                        </div>
                     </div>
-                    <div class="glass p-6 flex flex-col justify-between">
-                        <p class="text-xs opacity-50 uppercase">Feels Like</p>
-                        <p id="feelsLike" class="text-3xl font-light mt-4">--°</p>
+
+                    <div class="glass p-8 flex flex-col justify-between">
+                        <p class="text-[10px] opacity-40 uppercase tracking-widest font-bold">Status</p>
+                        <p class="text-xl font-semibold tracking-wide">Live Cloud</p>
                     </div>
                 </div>
             </div>
+        </div>
+
+        <div id="loader" class="hidden flex flex-col items-center mt-20">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+            <p class="mt-4 text-xs opacity-50 uppercase tracking-widest">Fetching from Cloud...</p>
         </div>
     </div>
 
     <script>
         async function getWeather() {
             const city = document.getElementById('cityInput').value;
-            const res = await fetch(`/api/weather?city=${city}`);
-            const data = await res.json();
+            const loader = document.getElementById('loader');
+            const dashboard = document.getElementById('dashboard');
             
-            document.getElementById('dashboard').classList.remove('hidden');
-            document.getElementById('cityName').innerText = data.city;
-            document.getElementById('mainTemp').innerText = Math.round(data.current.temperature_2m) + "°";
-            document.getElementById('humidity').innerText = data.current.relative_humidity_2m + "%";
-            document.getElementById('pressure').innerText = data.current.surface_pressure;
-            document.getElementById('wind').innerText = data.current.wind_speed_10m + " km/h";
-            document.getElementById('feelsLike').innerText = Math.round(data.current.apparent_temperature) + "°";
+            if(!city) return;
 
-            // Inject 7-Day Forecast
-            const dailyList = document.getElementById('dailyList');
-            dailyList.innerHTML = '';
-            data.daily.forEach(day => {
-                const dateLabel = new Date(day.date).toLocaleDateString('en-US', {weekday: 'short'});
-                dailyList.innerHTML += `
-                    <div class="flex justify-between items-center text-sm">
-                        <span class="w-10 opacity-70">${dateLabel}</span>
-                        <span class="font-bold">${Math.round(day.max)}°</span>
-                        <span class="opacity-50 text-xs">${Math.round(day.min)}°</span>
-                    </div>
-                `;
-            });
+            loader.classList.remove('hidden');
+            dashboard.classList.add('hidden');
 
-            // Inject Hourly
-            const hourlyList = document.getElementById('hourlyList');
-            hourlyList.innerHTML = '';
-            data.hourly_data.forEach((item) => {
-                hourlyList.innerHTML += `
-                    <div class="text-center min-w-[60px] p-2">
-                        <p class="text-[10px] opacity-40 mb-2">${item.time}</p>
-                        <p class="font-semibold text-sm">${Math.round(item.temp)}°</p>
-                    </div>
-                `;
-            });
+            try {
+                const response = await fetch(`/api/weather?city=${city}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                // Header Info
+                document.getElementById('cityName').innerText = data.city;
+                document.getElementById('localTime').innerText = "Live Update: " + data.local_time;
+                document.getElementById('mainTemp').innerText = Math.round(data.current.temperature_2m) + "°";
+                
+                // Metrics
+                document.getElementById('humidity').innerText = data.current.relative_humidity_2m + "%";
+                document.getElementById('pressure').innerText = Math.round(data.current.surface_pressure);
+                document.getElementById('wind').innerText = data.current.wind_speed_10m;
+                document.getElementById('feelsLike').innerText = Math.round(data.current.apparent_temperature) + "°";
+
+                // 7-Day Forecast Injection
+                const dailyList = document.getElementById('dailyList');
+                dailyList.innerHTML = '';
+                data.daily.time.forEach((date, i) => {
+                    const dayName = new Date(date).toLocaleDateString('en-US', {weekday: 'short'});
+                    dailyList.innerHTML += `
+                        <div class="flex justify-between items-center group">
+                            <span class="w-12 opacity-50 group-hover:opacity-100 transition-opacity">${dayName}</span>
+                            <div class="h-[1px] flex-grow mx-4 bg-white/10"></div>
+                            <span class="font-semibold text-lg">${Math.round(data.daily.temperature_2m_max[i])}°</span>
+                            <span class="w-8 text-right opacity-30 text-xs ml-2">${Math.round(data.daily.temperature_2m_min[i])}°</span>
+                        </div>
+                    `;
+                });
+
+                // Hourly List Injection
+                const hourlyList = document.getElementById('hourlyList');
+                hourlyList.innerHTML = '';
+                data.hourly_data.forEach(item => {
+                    const isNow = item.time === "Now";
+                    hourlyList.innerHTML += `
+                        <div class="flex flex-col items-center min-w-[85px] p-5 rounded-2xl transition-all ${isNow ? 'active-now shadow-xl' : 'hover:bg-white/5'}">
+                            <p class="text-[10px] ${isNow ? 'font-bold text-white' : 'opacity-40'} mb-4 uppercase tracking-tighter">${item.time}</p>
+                            <p class="text-2xl font-light">${Math.round(item.temp)}°</p>
+                        </div>
+                    `;
+                });
+
+                dashboard.classList.remove('hidden');
+            } catch (err) {
+                console.error("Cloud Error:", err);
+                alert("Failed to fetch data from serverless backend.");
+            } finally {
+                loader.classList.add('hidden');
+            }
         }
+
+        // Search on Enter Key
+        document.getElementById('cityInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') getWeather();
+        });
     </script>
 </body>
 </html>
